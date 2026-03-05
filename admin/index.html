@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Ada's Kitchen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --cream: #F8F5F0; --ink: #18180E; --muted: #6A6860;
+      --copper: #A8755A; --copper-dark: #8E6249; --copper-light: #F0E4D8;
+      --border: #DDD8CE; --white: #FFFFFF; --sidebar: #18180E;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); line-height: 1.6; }
+    .font-display { font-family: 'Cormorant Garamond', serif; }
+    .form-input {
+      width: 100%; padding: 10px 13px; border: 1px solid var(--border);
+      background: var(--white); font-family: 'DM Sans', sans-serif;
+      font-size: 0.86rem; color: var(--ink); outline: none; transition: border-color 0.2s;
+    }
+    .form-input:focus { border-color: var(--copper); }
+    .btn { display:inline-flex;align-items:center;gap:7px;font-family:'DM Sans',sans-serif;font-size:0.75rem;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:10px 22px;border:none;cursor:pointer;transition:all 0.2s; }
+    .btn-copper { background:var(--copper);color:white; }
+    .btn-copper:hover { background:var(--copper-dark); }
+    .btn-outline { background:transparent;border:1px solid var(--border);color:var(--muted); }
+    .btn-outline:hover { border-color:var(--ink);color:var(--ink); }
+    .btn-danger { background:transparent;border:1px solid #C0746060;color:#B04040; }
+    .btn-danger:hover { background:#FFF0F0; }
+    .badge { display:inline-block;font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;padding:3px 9px; }
+    .badge-copper { background:var(--copper-light);color:var(--copper-dark); }
+    .badge-green { background:#EDF4EE;color:#3E6B44; }
+    .badge-yellow { background:#FDF6E3;color:#8A6B2A; }
+    .badge-red { background:#FCEEED;color:#B04040; }
+    select.form-input { -webkit-appearance:none; }
+    table { width:100%;border-collapse:collapse; }
+    th { font-size:0.67rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);text-align:left;padding:14px 16px;border-bottom:1px solid var(--border); }
+    td { font-size:0.86rem;padding:16px 16px;border-bottom:1px solid var(--border);vertical-align:middle; }
+    tr:hover td { background:rgba(248,245,240,0.6); }
+    .sidebar-link { display:flex;align-items:center;gap:11px;padding:11px 20px;font-size:0.76rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.5);cursor:pointer;background:none;border:none;width:100%;text-align:left;transition:all 0.18s;border-left:2px solid transparent; }
+    .sidebar-link:hover { color:rgba(255,255,255,0.85); }
+    .sidebar-link.active { color:white;border-left-color:var(--copper);background:rgba(255,255,255,0.05); }
+    .modal-overlay { position:fixed;inset:0;z-index:1000;background:rgba(24,24,14,0.55);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center; }
+    .modal-box { background:var(--cream);padding:44px;max-width:560px;width:90%;max-height:90vh;overflow-y:auto; }
+    .field-label { display:block;font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:7px; }
+    .status-dot { width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:7px; }
+  </style>
+</head>
+<body>
+
+<!-- Login screen -->
+<div id="login-screen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--ink);">
+  <div style="background:var(--cream);padding:52px;max-width:400px;width:90%;">
+    <p style="font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--copper);margin-bottom:12px;">Admin</p>
+    <h1 class="font-display" style="font-size:2.2rem;font-weight:400;letter-spacing:-0.02em;margin-bottom:36px;">Ada's Kitchen</h1>
+    <form onsubmit="adminLogin(event)">
+      <div style="margin-bottom:12px;"><label class="field-label">Email</label><input id="l-email" type="email" class="form-input" required /></div>
+      <div style="margin-bottom:28px;"><label class="field-label">Password</label><input id="l-pass" type="password" class="form-input" required /></div>
+      <p id="l-err" style="font-size:0.8rem;color:#B04040;margin-bottom:14px;display:none;"></p>
+      <button type="submit" class="btn btn-copper" style="width:100%;padding:14px;" id="l-btn">Sign In</button>
+    </form>
+  </div>
+</div>
+
+<!-- Admin shell -->
+<div id="admin-shell" style="display:none;min-height:100vh;display:none;">
+  <div style="display:grid;grid-template-columns:220px 1fr;min-height:100vh;">
+
+    <!-- Sidebar -->
+    <aside style="background:var(--sidebar);padding:0;display:flex;flex-direction:column;">
+      <div style="padding:28px 20px 20px;">
+        <p class="font-display" style="font-size:1.05rem;color:white;letter-spacing:0.04em;">Ada's Kitchen</p>
+        <p style="font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-top:3px;">Admin Panel</p>
+      </div>
+      <div style="padding:8px 0;flex:1;">
+        <button class="sidebar-link active" data-view="products" onclick="switchView('products',this)">
+          <span>⊞</span> Products
+        </button>
+        <button class="sidebar-link" data-view="orders" onclick="switchView('orders',this)">
+          <span>◫</span> Orders
+        </button>
+      </div>
+      <div style="padding:20px;">
+        <p id="admin-email" style="font-size:0.72rem;color:rgba(255,255,255,0.3);margin-bottom:10px;word-break:break-all;"></p>
+        <button class="btn btn-outline" style="width:100%;color:rgba(255,255,255,0.4);border-color:rgba(255,255,255,0.12);" onclick="adminLogout()">Sign Out</button>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main style="background:var(--cream);overflow-y:auto;">
+
+      <!-- Products view -->
+      <div id="view-products">
+        <div style="padding:44px 48px 0;display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:36px;">
+          <div>
+            <p style="font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--copper);margin-bottom:6px;">Manage</p>
+            <h2 class="font-display" style="font-size:2.4rem;font-weight:400;letter-spacing:-0.02em;">Products</h2>
+          </div>
+          <button class="btn btn-copper" onclick="openProductModal()">+ Add Product</button>
+        </div>
+        <div style="padding:0 48px 80px;">
+          <div style="background:var(--white);box-shadow:0 2px 16px rgba(24,24,14,0.06);">
+            <div id="products-loading" style="padding:60px;text-align:center;color:var(--muted);">Loading…</div>
+            <table id="products-table" style="display:none;">
+              <thead>
+                <tr>
+                  <th>Product</th><th>Category</th><th>Price</th><th>Badge</th><th>Stock</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="products-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Orders view -->
+      <div id="view-orders" style="display:none;">
+        <div style="padding:44px 48px 0;margin-bottom:36px;">
+          <p style="font-size:0.68rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--copper);margin-bottom:6px;">Manage</p>
+          <h2 class="font-display" style="font-size:2.4rem;font-weight:400;letter-spacing:-0.02em;">Orders</h2>
+        </div>
+        <div style="padding:0 48px 80px;">
+          <div style="background:var(--white);box-shadow:0 2px 16px rgba(24,24,14,0.06);">
+            <div id="orders-loading" style="padding:60px;text-align:center;color:var(--muted);">Loading…</div>
+            <table id="orders-table" style="display:none;">
+              <thead>
+                <tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th><th></th></tr>
+              </thead>
+              <tbody id="orders-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Product modal -->
+<div id="product-modal" style="display:none;" class="modal-overlay">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;">
+      <h3 class="font-display" id="modal-title" style="font-size:1.8rem;font-weight:400;letter-spacing:-0.01em;">Add Product</h3>
+      <button onclick="closeProductModal()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--muted);">✕</button>
+    </div>
+    <form id="product-form" onsubmit="saveProduct(event)">
+      <input type="hidden" id="p-id" />
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div style="grid-column:1/-1;"><label class="field-label">Name</label><input id="p-name" class="form-input" required /></div>
+        <div>
+          <label class="field-label">Category</label>
+          <select id="p-category" class="form-input" required>
+            <option value="">Select…</option>
+            <option value="cookware">Cookware</option>
+            <option value="appliances">Appliances</option>
+            <option value="utensils">Utensils</option>
+            <option value="storage">Storage</option>
+          </select>
+        </div>
+        <div><label class="field-label">Price ($)</label><input id="p-price" type="number" min="0" step="0.01" class="form-input" required /></div>
+        <div><label class="field-label">Badge (optional)</label><input id="p-badge" class="form-input" placeholder="e.g. New, Bestseller" /></div>
+        <div>
+          <label class="field-label">In Stock</label>
+          <select id="p-stock" class="form-input">
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:14px;"><label class="field-label">Image URL</label><input id="p-img" class="form-input" placeholder="https://…" /></div>
+      <div style="margin-bottom:14px;"><label class="field-label">Description</label><textarea id="p-desc" class="form-input" rows="3" style="resize:vertical;"></textarea></div>
+      <div style="margin-bottom:28px;"><label class="field-label">Specs (one per line)</label><textarea id="p-specs" class="form-input" rows="4" style="resize:vertical;" placeholder="28 cm diameter&#10;Oven-safe to 260 °C"></textarea></div>
+      <p id="product-form-err" style="font-size:0.8rem;color:#B04040;margin-bottom:14px;display:none;"></p>
+      <div style="display:flex;gap:12px;">
+        <button type="submit" class="btn btn-copper" id="p-submit">Save Product</button>
+        <button type="button" class="btn btn-outline" onclick="closeProductModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Order status modal -->
+<div id="order-modal" style="display:none;" class="modal-overlay">
+  <div class="modal-box" style="max-width:400px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;">
+      <h3 class="font-display" style="font-size:1.6rem;font-weight:400;">Update Status</h3>
+      <button onclick="closeOrderModal()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--muted);">✕</button>
+    </div>
+    <p style="font-size:0.8rem;color:var(--muted);margin-bottom:20px;" id="order-modal-id"></p>
+    <div style="margin-bottom:28px;">
+      <label class="field-label">Status</label>
+      <select id="order-status-select" class="form-input">
+        <option value="pending">Pending</option>
+        <option value="confirmed">Confirmed</option>
+        <option value="shipped">Shipped</option>
+        <option value="delivered">Delivered</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:12px;">
+      <button class="btn btn-copper" onclick="saveOrderStatus()">Update</button>
+      <button class="btn btn-outline" onclick="closeOrderModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '../';
+let adminToken = sessionStorage.getItem('admin-token');
+let editingOrderId = null;
+
+async function apiFetch(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  if (adminToken) headers['Authorization'] = `Bearer ${adminToken}`;
+  const res = await fetch(API + path, { ...opts, headers });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+async function adminLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('l-btn');
+  const err = document.getElementById('l-err');
+  btn.disabled = true; btn.textContent = 'Signing in…'; err.style.display = 'none';
+
+  try {
+    const data = await apiFetch('api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email: document.getElementById('l-email').value, password: document.getElementById('l-pass').value })
+    });
+    if (data.user.role !== 'admin') throw new Error('Not an admin account');
+    adminToken = data.access_token;
+    sessionStorage.setItem('admin-token', adminToken);
+    document.getElementById('admin-email').textContent = data.user.email;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-shell').style.display = 'grid';
+    loadProducts();
+  } catch (ex) {
+    err.textContent = ex.message; err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Sign In';
+  }
+}
+
+function adminLogout() {
+  adminToken = null;
+  sessionStorage.removeItem('admin-token');
+  location.reload();
+}
+
+function switchView(view, btn) {
+  document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('view-products').style.display = view === 'products' ? 'block' : 'none';
+  document.getElementById('view-orders').style.display = view === 'orders' ? 'block' : 'none';
+  if (view === 'products') loadProducts();
+  if (view === 'orders') loadOrders();
+}
+
+// ── Products ──────────────────────────────────
+async function loadProducts() {
+  document.getElementById('products-loading').style.display = 'block';
+  document.getElementById('products-table').style.display = 'none';
+  try {
+    const products = await apiFetch('api/products');
+    renderProducts(products);
+  } catch (err) {
+    document.getElementById('products-loading').textContent = 'Error: ' + err.message;
+  }
+}
+
+function renderProducts(products) {
+  document.getElementById('products-loading').style.display = 'none';
+  document.getElementById('products-table').style.display = 'table';
+  document.getElementById('products-tbody').innerHTML = products.map(p => `
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <img src="${p.img}" style="width:44px;height:44px;object-fit:cover;flex-shrink:0;" />
+          <span style="font-size:0.88rem;font-weight:400;color:var(--ink);">${p.name}</span>
+        </div>
+      </td>
+      <td><span style="text-transform:capitalize;color:var(--muted);font-size:0.82rem;">${p.category}</span></td>
+      <td><span class="font-display" style="font-size:1rem;">$${Number(p.price).toLocaleString()}</span></td>
+      <td>${p.badge ? `<span class="badge badge-copper">${p.badge}</span>` : '<span style="color:var(--muted);font-size:0.8rem;">—</span>'}</td>
+      <td>
+        <span class="status-dot" style="background:${p.in_stock ? '#5A8A5A' : '#C06060'};"></span>
+        <span style="font-size:0.8rem;color:${p.in_stock ? '#3E6B44' : '#B04040'};">${p.in_stock ? 'In Stock' : 'Out of Stock'}</span>
+      </td>
+      <td>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline" onclick='editProduct(${JSON.stringify(p)})'>Edit</button>
+          <button class="btn btn-danger" onclick="deleteProduct('${p.id}')">Delete</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function openProductModal(p = null) {
+  document.getElementById('p-id').value = p?.id || '';
+  document.getElementById('p-name').value = p?.name || '';
+  document.getElementById('p-category').value = p?.category || '';
+  document.getElementById('p-price').value = p?.price || '';
+  document.getElementById('p-badge').value = p?.badge || '';
+  document.getElementById('p-stock').value = p ? String(p.in_stock) : 'true';
+  document.getElementById('p-img').value = p?.img || '';
+  document.getElementById('p-desc').value = p?.description || '';
+  document.getElementById('p-specs').value = p?.specs?.join('\n') || '';
+  document.getElementById('modal-title').textContent = p ? 'Edit Product' : 'Add Product';
+  document.getElementById('product-form-err').style.display = 'none';
+  document.getElementById('product-modal').style.display = 'flex';
+}
+
+function editProduct(p) { openProductModal(p); }
+
+function closeProductModal() { document.getElementById('product-modal').style.display = 'none'; }
+
+async function saveProduct(e) {
+  e.preventDefault();
+  const btn = document.getElementById('p-submit');
+  const errEl = document.getElementById('product-form-err');
+  btn.disabled = true; btn.textContent = 'Saving…'; errEl.style.display = 'none';
+
+  const id = document.getElementById('p-id').value;
+  const body = {
+    name: document.getElementById('p-name').value,
+    category: document.getElementById('p-category').value,
+    price: parseFloat(document.getElementById('p-price').value),
+    badge: document.getElementById('p-badge').value || null,
+    in_stock: document.getElementById('p-stock').value === 'true',
+    img: document.getElementById('p-img').value,
+    description: document.getElementById('p-desc').value,
+    specs: document.getElementById('p-specs').value.split('\n').map(s => s.trim()).filter(Boolean)
+  };
+
+  try {
+    if (id) {
+      await apiFetch(`api/products/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+    } else {
+      await apiFetch('api/products', { method: 'POST', body: JSON.stringify(body) });
+    }
+    closeProductModal();
+    loadProducts();
+  } catch (err) {
+    errEl.textContent = err.message; errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Save Product';
+  }
+}
+
+async function deleteProduct(id) {
+  if (!confirm('Delete this product? This cannot be undone.')) return;
+  try {
+    await apiFetch(`api/products/${id}`, { method: 'DELETE' });
+    loadProducts();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
+
+// ── Orders ────────────────────────────────────
+async function loadOrders() {
+  document.getElementById('orders-loading').style.display = 'block';
+  document.getElementById('orders-table').style.display = 'none';
+  try {
+    const orders = await apiFetch('api/orders');
+    renderOrders(orders);
+  } catch (err) {
+    document.getElementById('orders-loading').textContent = 'Error: ' + err.message;
+  }
+}
+
+const STATUS_COLORS = {
+  pending: 'badge-yellow', confirmed: 'badge-copper',
+  shipped: 'badge-green', delivered: 'badge-green', cancelled: 'badge-red'
+};
+
+function renderOrders(orders) {
+  document.getElementById('orders-loading').style.display = 'none';
+  document.getElementById('orders-table').style.display = 'table';
+
+  if (orders.length === 0) {
+    document.getElementById('orders-loading').textContent = 'No orders yet.';
+    document.getElementById('orders-loading').style.display = 'block';
+    document.getElementById('orders-table').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('orders-tbody').innerHTML = orders.map(o => {
+    const d = o.delivery || {};
+    const date = new Date(o.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+    const itemCount = (o.items || []).reduce((s, i) => s + i.qty, 0);
+    const shortId = o.id.slice(0, 8);
+    return `
+      <tr>
+        <td><span style="font-family:monospace;font-size:0.78rem;color:var(--muted);">${shortId}…</span></td>
+        <td>
+          <div style="font-size:0.86rem;">${d.first_name || ''} ${d.last_name || ''}</div>
+          <div style="font-size:0.76rem;color:var(--muted);">${d.email || ''}</div>
+        </td>
+        <td><span style="font-size:0.82rem;color:var(--muted);">${itemCount} item${itemCount !== 1 ? 's' : ''}</span></td>
+        <td><span class="font-display" style="font-size:1rem;">$${Number(o.total).toLocaleString()}</span></td>
+        <td><span class="badge ${STATUS_COLORS[o.status] || 'badge-copper'}">${o.status}</span></td>
+        <td><span style="font-size:0.78rem;color:var(--muted);">${date}</span></td>
+        <td>
+          <button class="btn btn-outline" onclick="openOrderModal('${o.id}','${o.status}')">Update</button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function openOrderModal(id, status) {
+  editingOrderId = id;
+  document.getElementById('order-modal-id').textContent = `Order #${id.slice(0,8)}…`;
+  document.getElementById('order-status-select').value = status;
+  document.getElementById('order-modal').style.display = 'flex';
+}
+
+function closeOrderModal() { document.getElementById('order-modal').style.display = 'none'; }
+
+async function saveOrderStatus() {
+  const status = document.getElementById('order-status-select').value;
+  try {
+    await apiFetch(`api/orders/${editingOrderId}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+    closeOrderModal();
+    loadOrders();
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
+
+// ── Auto-login if session token exists ────────
+if (adminToken) {
+  apiFetch('api/auth/me').then(user => {
+    if (user.role === 'admin') {
+      document.getElementById('admin-email').textContent = user.email;
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('admin-shell').style.display = 'grid';
+      loadProducts();
+    } else { sessionStorage.removeItem('admin-token'); adminToken = null; }
+  }).catch(() => { sessionStorage.removeItem('admin-token'); adminToken = null; });
+}
+</script>
+
+</body>
+</html>
